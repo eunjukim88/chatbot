@@ -19,39 +19,56 @@ export const imageService = {
                 canvas.width = img.width;
                 canvas.height = img.height;
 
-                // 원본 이미지 그리기
+                // 원본 그리기
                 ctx.drawImage(img, 0, 0);
 
-                // 워터마크 스타일 설정
+                // 워터마크 설정
                 const timestamp = new Date().toLocaleString();
-                const watermarkText = `${companyName} / ${ticketId} / ${timestamp}`;
 
-                // 이미지 크기에 따라 폰트 크기 조절
-                const fontSize = Math.max(20, Math.floor(canvas.width / 40));
+                // 폰트 크기: 이미지 폭의 3% 대략 (최소 24px)
+                const fontSize = Math.max(24, Math.floor(canvas.width * 0.035));
                 ctx.font = `bold ${fontSize}px sans-serif`;
 
-                // 텍스트 배경 (가독성을 위해)
-                const textWidth = ctx.measureText(watermarkText).width;
-                const padding = fontSize * 0.5;
+                // 텍스트 준비 (2줄)
+                const line1 = companyName; // "Guro Maintenance System"
+                const line2 = `ID: ${ticketId}  |  ${timestamp}`;
 
-                ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-                ctx.fillRect(
-                    canvas.width - textWidth - padding * 2 - 20,
-                    canvas.height - fontSize - padding * 2 - 20,
-                    textWidth + padding * 2,
-                    fontSize + padding * 2
-                );
+                const measure1 = ctx.measureText(line1);
+                const measure2 = ctx.measureText(line2);
+
+                const maxWidth = Math.max(measure1.width, measure2.width);
+                const lineHeight = fontSize * 1.4;
+                const totalHeight = lineHeight * 2;
+                const padding = fontSize * 0.6;
+                const margin = fontSize; // 우측 하단 여백
+
+                // 배경 박스 (우측 하단)
+                const boxX = canvas.width - maxWidth - (padding * 2) - margin;
+                const boxY = canvas.height - totalHeight - (padding * 2) - margin;
+                const boxW = maxWidth + (padding * 2);
+                const boxH = totalHeight + (padding * 2);
+
+                ctx.fillStyle = "rgba(0, 0, 0, 0.65)"; // 더 진한 배경
+                ctx.fillRect(boxX, boxY, boxW, boxH);
+
+                // 테두리 (선택사항, 노란색 포인트)
+                ctx.strokeStyle = "#FFD700";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boxX, boxY, boxW, boxH);
 
                 // 텍스트 그리기
-                ctx.fillStyle = "white";
-                ctx.textAlign = "right";
-                ctx.fillText(
-                    watermarkText,
-                    canvas.width - 20 - padding,
-                    canvas.height - 20 - padding - fontSize * 0.2
-                );
+                ctx.textAlign = "left";
+                ctx.textBaseline = "top";
 
-                resolve(canvas.toDataURL("image/jpeg", 0.8));
+                // Line 1: 회사명 (노란색 강조)
+                ctx.fillStyle = "#FFD700";
+                ctx.fillText(line1, boxX + padding, boxY + padding);
+
+                // Line 2: 정보 (흰색)
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillText(line2, boxX + padding, boxY + padding + lineHeight);
+
+                resolve(canvas.toDataURL("image/jpeg", 0.85));
             };
             img.onerror = reject;
             img.src = imageDataUrl;
